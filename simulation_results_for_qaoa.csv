@@ -1,0 +1,6 @@
+workload,normalized_shots_number_Original,normalized_shots_number_JigSaw,normalized_shots_number_QuTracer,average_counts_for_2q_basis_gates_Original,average_counts_for_2q_basis_gates_JigSaw,average_counts_for_2q_basis_gates_QuTracer,fidelity_Original,fidelity_JigSaw,fidelity_QuTracer,fidelity_improvement_QuTracer
+qaoa_reps1_n10,1,1,16,26,26,6,0.96,0.95,0.97,1.40%
+qaoa_reps2_n10,1,1,106,52,52,21,0.85,0.85,0.89,4.65%
+qaoa_reps3_n10,1,1,196,78,78,29,0.82,0.82,0.88,7.25%
+qaoa_reps4_n10,1,1,286,104,104,37,0.78,0.78,0.86,10.10%
+qaoa_reps5_n10,1,1,376,130,130,47,0.34,0.34,0.69,101.99%
