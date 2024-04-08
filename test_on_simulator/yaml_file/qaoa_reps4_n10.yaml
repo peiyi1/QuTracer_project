@@ -1,4 +1,4 @@
-hardware: ibmq_mumbai
+hardware: ibm_kyoto
 shots: 100000
 benchmark: benchmark.qaoa
 test_qubits: 10
