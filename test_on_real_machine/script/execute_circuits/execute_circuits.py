@@ -56,13 +56,16 @@ if enable_QuTracer:
     #check each of the layers
     for check_layer_index in check_layer_index_list:
         #check qubits and position
-        for check_qubits in check_qubits_dict:
-            #load circuit
-            save_path = configuration['results_save_path'] + '/generate_circuits_QuTracer/circuit_layer_' + str(check_layer_index)
-            save_name= '/qc_list_checking_qubit_' + check_qubits + '.qpy'
-            with open(save_path + save_name, "rb") as f:
-                circuits = qpy.load(f)
-                running_circuits=running_circuits+circuits
+        for check_qubits, check_position in check_qubits_dict.items():
+            if(check_position[check_layer_index]!=None):
+                #load circuit
+                save_path = configuration['results_save_path'] + '/generate_circuits_QuTracer/circuit_layer_' + str(check_layer_index)
+                if type(check_qubits) == int:
+                    check_qubits = str(check_qubits)
+                save_name= '/qc_list_checking_qubit_' + check_qubits + '.qpy'
+                with open(save_path + save_name, "rb") as f:
+                    circuits = qpy.load(f)
+                    running_circuits=running_circuits+circuits
                 
     #recored the end point of the running circuits
     running_circuits_QuTracer_end = len(running_circuits)
@@ -108,7 +111,7 @@ from utils import execute_circuits_on_simulator, execute_circuits_on_real_machin
 
 #specify shots number
 shots_original_circuits =  configuration['shots']
-shots_remaining_circuits =  configuration['shots']//configuration['test_qubits']
+shots_remaining_circuits =  configuration['shots']//len(configuration['measured_qubits'])
 
 #execute circuits (ideal simulation)
 ideal_counts_original_circuits = execute_circuits_on_simulator(running_circuits[0:1], simulator, shots_original_circuits)

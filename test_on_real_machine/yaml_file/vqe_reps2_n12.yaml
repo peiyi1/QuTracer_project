@@ -1,0 +1,76 @@
+hardware: ibm_kyoto
+shots: 100000
+benchmark: benchmark.vqe
+test_qubits: 12
+measured_qubits: [0,1,2,3,4,5,6,7,8,9,10,11]
+reps: 2
+parameters: [-0.28872429439166797, 1.8547750009167807, -0.10705329493558216, 0.06734684477554004, 2.480119103537958, 0.4605971429479835, 1.485841564107696, 0.29963022351101476, -0.1751597082896372, 0.6816424451905077, -0.16819838362671005, 0.8708247241450554, 2.5577929207730183, 1.6059334611167377, 3.0035476225473916, 0.6954686986533216, 0.26856712141695044, 0.49392742747816526, 0.8407699513855527, 2.910760937403518, 0.5385109863386117, 1.8619115323449713, 0.3523171542551298, 2.1495497158559886, 2.503224302811366, -0.4611425356528803, 2.985255341357454, 2.54986248957755, 3.4809595326989067, 2.466879779606211, 2.24615459427794, -0.2659978217334717, -0.49267987408583425, 0.6059231362405071, -0.31681748535025417, 0.11935580607873145]
+
+transpile_times: 50
+results_save_path: ../../saved_data/vqe_reps2_n12
+
+enable_QuTracer: True
+enable_jigsaw: True
+enable_SQEM: False
+
+enable_running_on_real_machine: True
+
+enable_independency_removal: True
+enable_noise_aware_mapping: True
+enable_localized_gate_simulation: True
+
+jigsaw_check_qubits: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[0,11]]
+
+QuTracer_cutting_qubits: 1
+QuTracer_check_layer_index: [0,1]
+QuTracer_check_qubits:
+    0: [[1,2],[3,4]]
+    1: [[1,3],[4,6]]
+    2: [[1,3],[4,6]]
+    3: [[1,3],[4,6]]
+    4: [[1,3],[4,6]]
+    5: [[1,3],[4,6]]
+    6: [[1,3],[4,6]]
+    7: [[1,3],[4,6]]
+    8: [[1,3],[4,6]]
+    9: [[1,3],[4,6]]
+    10: [[1,3],[4,6]]
+    11: [[1,2],[3,4]]
+QuTracer_update_qubits:
+    0: 0
+    1: 1
+    2: 2
+    3: 3
+    4: 4
+    5: 5
+    6: 6
+    7: 7
+    8: 8
+    9: 9
+    10: 10
+    11: 11
+prep_state_list_layer_0: ['Z_p','Z_n','X_p','Y_p']
+obs_list_layer_0: ['X']
+prep_state_list_layer_1: ['Z_p','Z_n','X_p','X_n','Y_p','Y_n']
+obs_list_layer_1: ['X']
+
+trace_obs_x: null
+trace_obs_y: 0
+trace_obs_z: null
+
+localized_initial_gates: 
+    0: [ry]
+    1: [ry]
+    2: [ry]
+    3: [ry]
+    4: [ry]
+    5: [ry]
+    6: [ry]
+    7: [ry]
+    8: [ry]
+    9: [ry]
+    10: [ry]
+    11: [ry]
+localized_gates: ry
+
+final_obs: Z
