@@ -2,7 +2,7 @@ import csv
 import json
 
 
-labels = ['qaoa_reps1_n10']
+labels = ['QFTMultiplier_n4','qpe_n5','qpe_n6','QFTAdder_n7','bv_n9','vqe_reps1_n12','vqe_reps1_n15','qaoa_reps1_n10']
     
 
 with open('real_machine_results_for_single_layer_circuits.csv', 'w') as csvfile:
