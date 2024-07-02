@@ -1,0 +1,53 @@
+hardware: ibm_kyoto
+shots: 100000
+benchmark: benchmark.qpe
+test_qubits: 6
+measured_qubits: [0,1,2,3,4]
+reps: 1
+parameters: null
+
+transpile_times: 50
+results_save_path: ../../saved_data/qpe_n6
+
+enable_QuTracer: True
+enable_jigsaw: True
+enable_SQEM: False
+
+enable_running_on_real_machine: False
+
+enable_independency_removal: True
+enable_noise_aware_mapping: True
+enable_localized_gate_simulation: True
+
+jigsaw_check_qubits: [[0,1],[1,2],[2,3],[3,4],[0,4]]
+
+QuTracer_cutting_qubits: 1
+QuTracer_check_layer_index: [0]
+QuTracer_check_qubits:
+    0: [[1,6]]
+    1: [[1,6]]
+    2: [[1,7]]
+    3: [[1,10]]
+    4: [[1,17]]
+QuTracer_update_qubits:
+    0: 0
+    1: 1
+    2: 2
+    3: 3
+    4: 4
+prep_state_list_layer_0: ['Z_p','Z_n','X_p','Y_p']
+obs_list_layer_0: ['X']
+
+trace_obs_x: null
+trace_obs_y: 0
+trace_obs_z: null
+
+localized_initial_gates: 
+    0: [h]
+    1: [h]
+    2: [h]
+    3: [h]
+    4: [h]
+localized_gates: null
+
+final_obs: X
