@@ -237,8 +237,8 @@ def cut_circuit(circuit, cuts, qreg_name = "q", creg_name = "c"):
         if qubit_found: continue
         unused_qubits.append(qubit)
     if unused_qubits:
-        print("WARNING: some qubits are entirely unused")
-        print("unused qubits:",unused_qubits)
+        #print("WARNING: some qubits are entirely unused")
+        #print("unused qubits:",unused_qubits)
         qreg = qs.QuantumRegister(len(unused_qubits), qreg_name)
         empty_circuit = qs.QuantumCircuit(qreg)
         register_map = { old_bit : new_bit

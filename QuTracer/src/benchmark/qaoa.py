@@ -18,7 +18,7 @@ def create_edges(n):
     return result
 
 
-def qaoa_circuits(test_qubits, parameters):
+def generate_circuit(test_qubits, parameters, num_reps=None):
     # create two-regular graph G
     G = nx.Graph()
     G.add_nodes_from([i for i in range(test_qubits)])
@@ -49,7 +49,7 @@ def qaoa_circuits(test_qubits, parameters):
             
         
     return qc
-def generate_circuits_til_certain_layer(layer_index,parameters):
+def generate_circuit_til_certain_layer(test_qubits, parameters, num_reps=None, qubit_index=None, node_index_list=None, layer_index=None):
     
     nqubits = 4 + layer_index*2
     qc = QuantumCircuit(nqubits)

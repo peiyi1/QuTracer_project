@@ -12,6 +12,19 @@ def norm_dict(d):
     # Return the normalized dictionary
     return normalized
 
+def bit_weight(dist, index):
+    #bitwise distribution
+    weight_0 = 0
+    weight_1 = 0
+    for key in dist.keys():
+        if key[len(key) - 1 - index] == '0':
+            weight_0 += dist[key]
+        elif key[len(key) - 1 - index] == '1':
+            weight_1 += dist[key]
+        else:
+            print("Incorrect key value")
+    return weight_0, weight_1
+
 def two_bit_weight(dist, index):
     weight_list = [0] * 4 #initialize a list of zeros with length 4
     for key in dist.keys():
@@ -25,7 +38,35 @@ def two_bit_weight(dist, index):
         weight_list[bit_index] += dist[key]
     return weight_list
 
-def update_dist(unmiti_dist, miti_dist, index, index_for_miti_dist=0):
+def update_dist_1bit(unmiti_dist, miti_dist, index, index_for_miti_dist=0):
+    Ppost = {}
+    w0, w1 = bit_weight(miti_dist, index_for_miti_dist)
+    u_w0, u_w1 = bit_weight(unmiti_dist, index)
+    if w0 == 0:
+        w0 = 0.0000000000001
+        w1 = 0.9999999999999
+    if w1 == 0:
+        w1 = 0.0000000000001
+        w0 = 0.9999999999999
+    if u_w0 == 0:
+        u_w0 = 0.0000000000001
+        u_w1 = 0.9999999999999
+    if u_w1 == 0:
+        u_w1 = 0.0000000000001
+        u_w0 = 0.9999999999999
+        
+    for key in unmiti_dist.keys():
+        if key[len(key) - 1 - index] == '0':
+            Ppost[key] = unmiti_dist[key] / u_w0 * (w0)# / w1)
+            #print(w0, w1, w0/w1, Ppost[key])
+        elif key[len(key) - 1 - index] == '1':
+            Ppost[key] = unmiti_dist[key] / u_w1 * (w1)# / w0)
+            #print(w0, w1, w1/w0, Ppost[key])
+        else:
+            print("Incorrect key value")
+    return Ppost
+
+def update_dist_2bit(unmiti_dist, miti_dist, index, index_for_miti_dist=0):
     Ppost = {}
     w_weights = two_bit_weight(miti_dist, index_for_miti_dist)
     u_weights = two_bit_weight(unmiti_dist, index)
@@ -77,14 +118,17 @@ def H_distance_dict(p, q):
     result = (1.0 / np.sqrt(2.0)) * np.sqrt(sum)
     return result
 
-def bayesian_reconstruct(unmiti_dist, miti_dist_list, threshold = 0.0001):
+def bayesian_reconstruct(unmiti_dist, miti_dist_list, cutting_bits, threshold = 0.0001):
     temp_dist = unmiti_dist.copy()
     h_dist = 1
     while h_dist > threshold:
         temp_dist_start = temp_dist.copy()
         ppost = [0] * len(miti_dist_list)
         for i in range(0, len(miti_dist_list)):
-            ppost[i] = update_dist(temp_dist, miti_dist_list[i][0], miti_dist_list[i][1], miti_dist_list[i][2])
+            if cutting_bits == 1:
+                ppost[i] = update_dist_1bit(temp_dist, miti_dist_list[i][0], miti_dist_list[i][1], miti_dist_list[i][2])
+            elif cutting_bits == 2:
+                ppost[i] = update_dist_2bit(temp_dist, miti_dist_list[i][0], miti_dist_list[i][1], miti_dist_list[i][2])
         #print(ppost)
         #print(len(ppost))
         temp_dist = combine_dist(temp_dist, ppost)

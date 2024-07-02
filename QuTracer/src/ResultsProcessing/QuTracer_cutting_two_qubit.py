@@ -519,7 +519,7 @@ def obtain_trace_pcs(check_layer_index,check_qubits,meas_trace_dict,prep_trace_d
         
     return trace    
 
-def obtain_density_matrix_pcs(check_layer_index,check_qubits,meas_trace_dict,prep_trace_dict):
+def obtain_density_matrix_pcs(check_layer_index,check_qubits,meas_trace_dict,prep_trace_dict,value_x=None,value_y=None,value_z=None):
     #obtain combined results from prep_traces and meas_trace
     trace_dict = obtain_trace_pcs(check_layer_index,check_qubits,meas_trace_dict,prep_trace_dict)
     density_matrix = obtain_density_matrix_from_trace(trace_dict)
@@ -867,7 +867,7 @@ def obtain_trace_pcs_layer_n(check_layer_index,check_qubits,trace_dict):
         
     return trace         
 
-def obtain_density_matrix_pcs_layer_n(check_layer_index,check_qubits,trace_dict):
+def obtain_density_matrix_pcs_layer_n(check_layer_index,check_qubits,trace_dict,value_x=None,value_y=None,value_z=None):
     #obtain combined results from prep_traces and meas_trace
     trace_dict = obtain_trace_pcs_layer_n(check_layer_index,check_qubits,trace_dict)
     density_matrix = obtain_density_matrix_from_trace(trace_dict)

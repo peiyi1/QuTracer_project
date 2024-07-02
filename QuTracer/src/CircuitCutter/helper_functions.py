@@ -80,7 +80,7 @@ def generate_circuit_adding_measurement(qc,measured_qubits,prep_qubits):
 from .circuit_cutter import cut_circuit
 def generate_circuit_after_cutting(circuit, check_qubits, check_position):
     #specify the info of cut
-    cuts = [(circuit.qubits[check_qubits[0]], check_position[0]),(circuit.qubits[check_qubits[1]], check_position[1])]
+    cuts = list(zip((circuit.qubits[qbit] for qbit in check_qubits), check_position))
     #do circuit cutting
     fragments, wire_path_map = cut_circuit(circuit, cuts)
     
@@ -98,18 +98,15 @@ def generate_circuit_after_cutting(circuit, check_qubits, check_position):
     
     #obtain the prep circuit and add measurement
     qc=fragments[prep_fragment_index]
-    
+    #obtain the meas circuit(to do: may have multiple framgment of meas circuits)
+    meas_qc=fragments[meas_fragment_index]
     #layer n (n>0)
-    if len(fragments) == 1:
-        #obtain the info of meas circuits
-        assert(len(meas_fragment_index_list)==1)
-        assert(len(meas_qubits_list)==1)
-        
-        new_qc=generate_circuit_adding_measurement(qc,meas_qubits+prep_qubits,prep_qubits)
+    if (len(meas_fragment_index_list)==1) and (prep_fragment_index==meas_fragment_index):   
+        prep_qc=generate_circuit_adding_measurement(qc,meas_qubits+prep_qubits,prep_qubits)
     #layer 0     
     else:
-        new_qc=generate_circuit_adding_measurement(qc,prep_qubits,prep_qubits)
-    return new_qc,prep_qubits,meas_qubits
+        prep_qc=generate_circuit_adding_measurement(qc,prep_qubits,prep_qubits)
+    return prep_qc,meas_qc,prep_qubits,meas_qubits
 ###########################################################################
 def obtain_initial_physical_qubits_index(qc, logical_qubits):
     layout = qc._layout
@@ -149,7 +146,44 @@ def get_gate_information(circuit):
     return gate_info
 ###############################################################################
 from qiskit import QuantumCircuit
-def create_circuits_with_certain_prep_meas(qc,qubits_initial_index_list,qubits_final_index_list,prep_state,obs='I'):
+def create_circuit_for_term1(qc,subcircuit,new_prep_qubit_index_transpiled_measurement,new_prep_qubit_index_transpiled,obs='I'):
+    new_qc=qc.copy()
+    if (subcircuit):
+        new_qc=qc.compose(subcircuit,new_prep_qubit_index_transpiled,front=True)
+    
+    # Create a Classical Register with 1 bits.
+    c_reg = ClassicalRegister(1, 'c')
+    new_qc.add_register(c_reg)
+    if(obs=='X'):
+        new_qc.h(new_prep_qubit_index_transpiled_measurement[0])
+    elif(obs=='Y'):
+        new_qc.sdg(new_prep_qubit_index_transpiled_measurement[0])  
+        new_qc.h(new_prep_qubit_index_transpiled_measurement[0])  
+    new_qc.measure(new_prep_qubit_index_transpiled_measurement[0],0)
+    
+    return new_qc
+
+def create_circuit_for_term4(qc,subcircuit,new_prep_qubit_index_transpiled_measurement,new_prep_qubit_index_transpiled,obs='I'):
+    subcircuit0=QuantumCircuit(1)
+    subcircuit0.z(0)
+    new_qc0=qc.compose(subcircuit0,new_prep_qubit_index_transpiled,front=True)
+    new_qc1=new_qc0.compose(subcircuit,new_prep_qubit_index_transpiled,front=True)
+    
+    c_reg = ClassicalRegister(1, 'c')
+    new_qc1.add_register(c_reg)
+    
+    new_qc1.z(new_prep_qubit_index_transpiled_measurement[0])
+
+    if(obs=='X'):
+        new_qc1.h(new_prep_qubit_index_transpiled_measurement[0])
+    elif(obs=='Y'):
+        new_qc1.sdg(new_prep_qubit_index_transpiled_measurement[0])  
+        new_qc1.h(new_prep_qubit_index_transpiled_measurement[0])  
+    new_qc1.measure(new_prep_qubit_index_transpiled_measurement[0],0)
+    
+    return new_qc1
+
+def create_circuits_with_certain_prep_meas_cutting_1q_layer_0(qc,new_prep_qubit_index_transpiled_measurement,new_prep_qubit_index_transpiled,prep_state,obs='I'):
     subcircuit=QuantumCircuit(1)
     #prep_state
     if(prep_state=='Z_n'):
@@ -166,12 +200,12 @@ def create_circuits_with_certain_prep_meas(qc,qubits_initial_index_list,qubits_f
         subcircuit.h(0)
         subcircuit.sdg(0)
         
-    new_qc=qc.compose(subcircuit,qubits_initial_index_list,front=True)
+    new_qc=qc.compose(subcircuit,new_prep_qubit_index_transpiled,front=True)
     
     # Create a Classical Register with 1 bits.
     c_reg = ClassicalRegister(1, 'c')
     new_qc.add_register(c_reg)
-    qubits_final_index=qubits_final_index_list[0]
+    qubits_final_index=new_prep_qubit_index_transpiled_measurement[0]
     if(obs=='X'):
         new_qc.h(qubits_final_index)
     elif(obs=='Y'):
@@ -181,7 +215,46 @@ def create_circuits_with_certain_prep_meas(qc,qubits_initial_index_list,qubits_f
     
     return new_qc
 
-def create_circuits_with_certain_prep_meas_2qubit(qc,new_prep_qubit_index_transpiled_measurement,new_prep_qubit_index_transpiled,prep_state,obs='II'):
+def create_circuits_with_certain_prep_meas_cutting_1q_layer_n(qc,new_prep_qubit_index_transpiled_measurement,new_prep_qubit_index_transpiled,prep_state,obs_meas='I',obs_final='I'):
+    subcircuit=QuantumCircuit(1)
+    #prep_state
+    if(prep_state=='Z_n'):
+        subcircuit.x(0)
+    elif(prep_state=='X_p'):
+        subcircuit.h(0)
+    elif(prep_state=='X_n'):
+        subcircuit.x(0)
+        subcircuit.h(0)
+    elif(prep_state=='Y_p'):
+        subcircuit.h(0)
+        subcircuit.s(0)
+    elif(prep_state=='Y_n'):
+        subcircuit.h(0)
+        subcircuit.sdg(0)
+        
+    new_qc=qc.compose(subcircuit,new_prep_qubit_index_transpiled,front=True)
+    
+    # Create a Classical Register with 2 bits.
+    c_reg = ClassicalRegister(2, 'c')
+    new_qc.add_register(c_reg)
+    if(obs_meas=='X'):
+        new_qc.h(new_prep_qubit_index_transpiled_measurement[0])
+    elif(obs_meas=='Y'):
+        new_qc.sdg(new_prep_qubit_index_transpiled_measurement[0])  
+        new_qc.h(new_prep_qubit_index_transpiled_measurement[0])
+    
+    if(obs_final=='X'):
+        new_qc.h(new_prep_qubit_index_transpiled_measurement[1])
+    elif(obs_final=='Y'):
+        new_qc.sdg(new_prep_qubit_index_transpiled_measurement[1])  
+        new_qc.h(new_prep_qubit_index_transpiled_measurement[1])
+    
+    new_qc.measure(new_prep_qubit_index_transpiled_measurement[0],0)
+    new_qc.measure(new_prep_qubit_index_transpiled_measurement[1],1)
+    
+    return new_qc
+
+def create_circuits_with_certain_prep_meas_cutting_2q_layer_0(qc,new_prep_qubit_index_transpiled_measurement,new_prep_qubit_index_transpiled,prep_state,obs='II'):
     subcircuit=QuantumCircuit(1)
     #prep_state[0]
     if(prep_state[-1]=='Z_n'):
@@ -235,7 +308,7 @@ def create_circuits_with_certain_prep_meas_2qubit(qc,new_prep_qubit_index_transp
     
     return new_qc
 
-def create_circuits_with_certain_prep_meas_4qubit(qc,new_prep_qubit_index_transpiled_measurement,new_prep_qubit_index_transpiled,prep_state,obs_meas='II',obs_final='II'):
+def create_circuits_with_certain_prep_meas_cutting_2q_layer_n(qc,new_prep_qubit_index_transpiled_measurement,new_prep_qubit_index_transpiled,prep_state,obs_meas='II',obs_final='II'):
     subcircuit=QuantumCircuit(1)
     #prep_state[0]
     if(prep_state[-1]=='Z_n'):
@@ -307,6 +380,10 @@ Y_eigen_states = ['Y_p', 'Y_n']
 Z_eigen_states = ['Z_p', 'Z_n']
 I_eigen_states = ['Z_p', 'Z_n']
 
+dict_for_create_circuit_term_1_4={'X':[X_eigen_states], 'Y':[Y_eigen_states]}
+dict_for_create_circuit_term_2_3={'X':[Y_eigen_states], 'Y':[X_eigen_states]}
+dict_for_create_circuit_term_common={'Z':[Z_eigen_states]}
+
 dict_for_create_circuit={'XX':[(X_eigen_states,X_eigen_states),(Y_eigen_states,Y_eigen_states),(X_eigen_states,Y_eigen_states),(Y_eigen_states,X_eigen_states)],
                          'XY':[(X_eigen_states,X_eigen_states),(Y_eigen_states,Y_eigen_states),(X_eigen_states,Y_eigen_states),(Y_eigen_states,X_eigen_states)],
                          'YX':[(X_eigen_states,X_eigen_states),(Y_eigen_states,Y_eigen_states),(X_eigen_states,Y_eigen_states),(Y_eigen_states,X_eigen_states)],
@@ -317,29 +394,76 @@ dict_for_create_circuit={'XX':[(X_eigen_states,X_eigen_states),(Y_eigen_states,Y
                          'ZY':[(Z_eigen_states,X_eigen_states),(Z_eigen_states,Y_eigen_states)],
                          'ZZ':[(Z_eigen_states,Z_eigen_states)],
                         }
+obs_dict = {'X':'Y', 'Y':'X', 'Z':'I', 'I':'Z'}
+
 from qiskit import  transpile
-def generate_execution_circuits_list(qc, backend, qubits_initial_index_list, qubits_final_index_list, obs_list, prep_state_list):
+def generate_execution_circuits_list(prep_qc, meas_qc, backend, qubits_initial_index_list, qubits_final_index_list, obs_list, prep_state_list):
     qc_list=[]
     
     #generate circuits for layer 0 and layer n (n>0)
     #circuits for layer 0 
     if len(prep_state_list) == 4:
-        for obs in obs_list:
-            for prep_state_1 in prep_state_list:
-                for prep_state_0 in prep_state_list:
-                    prep_state=[prep_state_1,prep_state_0]
-                    circ = create_circuits_with_certain_prep_meas_2qubit(qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs)
+        #cutting 1 qubit
+        if len(qubits_initial_index_list)==1:
+            #when obs_list just has one observable, decide if can do further optimizaiton
+            if len(obs_list)==1:
+                obs = obs_list[0]
+                #can do further optimization (to do: need to fill in the case when can not do further optimization)
+                if meas_qc.num_qubits == 1:
+                    #circuit for term1
+                    circ = create_circuit_for_term1(prep_qc,meas_qc,qubits_final_index_list,qubits_initial_index_list,obs=obs) 
                     qc_list.append(circ)
+                    #circuit for term4
+                    circ = create_circuit_for_term4(prep_qc,meas_qc,qubits_final_index_list,qubits_initial_index_list,obs=obs) 
+                    qc_list.append(circ)
+                    #circuit for term2 and term3
+                    for prep_state in prep_state_list:
+                        circ = create_circuits_with_certain_prep_meas_cutting_1q_layer_0(prep_qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs_dict[obs])
+                        qc_list.append(circ)
+                    #circuit for term2 and term3 (denominator)
+                    for prep_state in prep_state_list:
+                        circ = create_circuits_with_certain_prep_meas_cutting_1q_layer_0(prep_qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs_dict['I'])
+                        qc_list.append(circ)
+        #cutting more than 1 qubit
+        else:
+            for obs in obs_list:
+                for prep_state_1 in prep_state_list:
+                    for prep_state_0 in prep_state_list:
+                        prep_state=[prep_state_1,prep_state_0]
+                        circ = create_circuits_with_certain_prep_meas_cutting_2q_layer_0(prep_qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs)
+                        qc_list.append(circ)
+    
     #circuits for layer n
     else:
-        for obs_final in obs_list:
-            for obs_meas,prep_state_list in dict_for_create_circuit.items():
-                for (prep_state_1_list,prep_state_0_list) in prep_state_list:
-                    for prep_state_1 in prep_state_1_list:
-                        for prep_state_0 in prep_state_0_list:
-                            prep_state=[prep_state_1,prep_state_0]
-                            circ = create_circuits_with_certain_prep_meas_4qubit(qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs_meas,obs_final)
-                            qc_list.append(circ)
+        if len(qubits_initial_index_list)==1:
+            #create circuits for term 1 and 4
+            for obs_final in obs_list:
+                for obs_meas,prep_state_list in dict_for_create_circuit_term_1_4.items():
+                    for prep_state in prep_state_list[0]:
+                        circ = create_circuits_with_certain_prep_meas_cutting_1q_layer_n(prep_qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs_meas,obs_final)
+                        qc_list.append(circ)
+            #create circuits for term 2 and 3
+            #to do: need to process the case when all three obs are measured
+            for obs_final in obs_list + ['I']:
+                for obs_meas,prep_state_list in dict_for_create_circuit_term_2_3.items():
+                    for prep_state in prep_state_list[0]:
+                        circ = create_circuits_with_certain_prep_meas_cutting_1q_layer_n(prep_qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs_meas,obs_dict[obs_final])
+                        qc_list.append(circ)
+            #create circuits for common part
+            for obs_final in ['X','Y','Z']:
+                for obs_meas,prep_state_list in dict_for_create_circuit_term_common.items():
+                    for prep_state in prep_state_list[0]:
+                        circ = create_circuits_with_certain_prep_meas_cutting_1q_layer_n(prep_qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs_meas,obs_final)
+                        qc_list.append(circ)
+        else:
+            for obs_final in obs_list:
+                for obs_meas,prep_state_list in dict_for_create_circuit.items():
+                    for (prep_state_1_list,prep_state_0_list) in prep_state_list:
+                        for prep_state_1 in prep_state_1_list:
+                            for prep_state_0 in prep_state_0_list:
+                                prep_state=[prep_state_1,prep_state_0]
+                                circ = create_circuits_with_certain_prep_meas_cutting_2q_layer_n(prep_qc,qubits_final_index_list,qubits_initial_index_list,prep_state,obs_meas,obs_final)
+                                qc_list.append(circ)
                             
     new_qc_list = transpile(qc_list, backend, layout_method='trivial',optimization_level=3)
     #print(len(new_qc_list))
